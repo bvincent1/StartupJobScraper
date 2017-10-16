@@ -9,3 +9,6 @@ functions:
     handler: handler.cron
   events:
     - schedule: cron(0 14 ? * MON-FRI *)
+  environment:
+    PUSHBULLET_API_KEY: ${env:PUSHBULLET_API_KEY}
+    SUBSCRIBE_EMAIL_PASS: ${env:SUBSCRIBE_EMAIL_PASS}
