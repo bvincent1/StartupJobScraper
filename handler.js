@@ -2,8 +2,49 @@
 
 const request = require('request');
 const cheerio = require('cheerio');
-const PushBullet = require('pushbullet');
+const nodemailer = require('nodemailer');
 
+const TARGET = 'benjc.vincent@gmail.com'
+
+function sendEmail(data, callback) {
+  let smtpConfig = {
+    host: process.env.SUBSCRIBE_EMAIL_HOST,
+    port: 587,
+    secure: false,
+    auth: {
+        user: process.env.SUBSCRIBE_EMAIL_USER,
+        pass: process.env.SUBSCRIBE_EMAIL_PASS
+    }
+  };
+
+  let transporter = nodemailer.createTransport(smtpConfig);
+
+  let plaintext = '';
+  let html = '';
+
+  for (let job of data) {
+    plaintext += job.title + '\n' + job.link + '\n\n'
+    html += '<p><b><a href="' + job.link + '">' + job.title + '</a></b></p>'
+  }
+
+  let mail = {
+    from: '"Subscribe" <subscribe@hacknslash.io>',
+    to: TARGET,
+    subject: 'New StartupJobScraper Jobs!',
+    text: plaintext,
+    html: html
+  };
+
+  transporter.sendMail(mail, callback);
+}
+
+function join(list1, list2) {
+  let l = [];
+  for (let i = 0; i < list1.length; i++) {
+    l.push({'title': list1[i], 'link': list2[i] || null});
+  }
+  return l;
+}
 
 module.exports.cron = (err, context, callback) => {
   const options = {
@@ -13,32 +54,38 @@ module.exports.cron = (err, context, callback) => {
     }
   };
 
-  function main (err, resp, body) {
+  request(options, (err, resp, body) => {
     if (err) {
       callback(true, err);
     }
     else {
       const $ = cheerio.load(body);
-      const pusher = new PushBullet(process.env.PUSHBULLET_API_KEY);
-      var titles = [];
-      var links = [];
 
-      $('.sqs-block-content h3').each((i, val) => {
-         titles.push($(val).text());
-      });
+      try {
+        var titles = [];
+        var links = [];
+        $('.sqs-block-content h3').slice(1).each((i, val) => {
+          titles.push($(val).text());
+        });
 
-      $('a.sqs-block-button-element').each((i, val) => {
-        links.push($(val).attr('href'));
-      });
+        $('a.sqs-block-button-element').each((i, val) => {
+          links.push($(val).attr('href'));
+        });
 
-      pusher.link('benjc.vincent@gmail.com', titles[0], links[0], (err, resp) => {
-        console.log(err);
-        console.log(resp);
-      });
-
-      callback(null, {'message': resp && resp.statusCode});
+        var data = join(titles, links);
+        console.log(data); // log to cloudwatch
+        sendEmail(data, (err, info) => {
+          if (err) {
+            callback(true, err);
+          }
+          else {
+            let msg = JSON.stringify({"getCode": resp && resp.statusCode, "emailCode": info && info.response });
+            callback(null, {'message':  msg});
+          }
+        });
+      } catch (err) {
+        callback(true, err);
+      }
     }
-  }
-
-  request(options, main);
+  });
 };
