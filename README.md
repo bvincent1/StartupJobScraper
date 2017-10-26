@@ -1,7 +1,7 @@
 # StartupJobScraper
 
 ## Description
-Scrape Startup Edmonton's Job posting page and email the results to me. Simple cron job that runs Monday to Friday at 8am MST.
+Scrape Startup Edmonton's [Job posting page](https://www.startupedmonton.com/jobs/) and email the results to me. Simple cron job that runs Monday to Friday at 8am MST.
 
 ## Installation
 This uses the [Serverless](https://serverless.com/) framework and [AWS Lambda](http://docs.aws.amazon.com/lambda/latest/dg/welcome.html) natively. It is entirely possible to configure it to use a different provider via `serverless.yml`, but I wont go into that and will proceed as if we are using AWS.
