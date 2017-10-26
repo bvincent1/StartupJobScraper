@@ -1,5 +1,8 @@
 include .env
 
+install:
+	npm install
+
 test:
 	node test.js
 
