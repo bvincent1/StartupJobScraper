@@ -23,5 +23,5 @@ To install the dependencies run
 and then run
 `make deploy`
 
-For local testing or and / or local running simply run
+For local testing and / or local running simply run
 `make test`
